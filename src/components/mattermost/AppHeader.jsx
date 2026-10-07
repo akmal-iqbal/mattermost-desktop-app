@@ -1,4 +1,4 @@
-import { Box, Typography, IconButton, InputBase, Paper, Avatar, Badge, Divider, Tooltip, Menu, MenuItem, ListItemIcon } from "@mui/material";
+import { Box, Typography, IconButton, InputBase, Paper, Avatar, Badge, Divider, Tooltip, Menu, MenuItem } from "@mui/material";
 import {
   Search as SearchIcon,
   AlternateEmail as AtIcon,
@@ -11,7 +11,6 @@ import {
   Check as CheckIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
-  EditOutlined as EditIcon,
 } from "@mui/icons-material";
 import { C } from "../../theme/mattermost";
 

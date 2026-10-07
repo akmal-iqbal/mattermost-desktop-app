@@ -77,7 +77,7 @@ export const REACTION_QUICK = ["👍", "❤️", "😂", "🎉", "✅", "👀", 
 export function getUser(id) {
   const found = USERS.find((u) => u.id === id);
   if (!found && id !== "sys") {
-    if (process.env.NODE_ENV !== "production") console.warn(`[mock] unknown user id: ${id}`);
+    if (import.meta.env.DEV) console.warn(`[mock] unknown user id: ${id}`);
     return USERS[0];
   }
   // system message sentinel

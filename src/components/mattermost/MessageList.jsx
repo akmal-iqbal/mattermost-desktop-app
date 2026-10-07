@@ -3,10 +3,6 @@ import { PushPin as PinFilledIcon, Bookmark as BookmarkFilledIcon, Reply as Repl
 import { C } from "../../theme/mattermost";
 import { renderMessageHtml, REACTION_QUICK } from "../../data/mockMattermost";
 
-function ForumOutlinedIcon() {
-  return <Box sx={{ fontSize: 28, color: "#94a3b8" }}>◈</Box>;
-}
-
 /**
  * Message list with DM intro, system messages, dish/image & thread meta
  * Backend: messages -> GET /channels/:id/messages ; reactions -> POST /reactions
@@ -115,7 +111,7 @@ export default function MessageList({
                     )}
                     {m.reactions?.length > 0 && <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, mt: 0.6, flexWrap: "wrap" }}>{m.reactions.map((r) => <Chip key={r.emoji} label={`${r.emoji} ${r.count}`} size="small" onClick={() => toggleReaction(m.id, r.emoji)} sx={{ height: 22, fontSize: 11, bgcolor: r.me ? "rgba(61,125,232,0.18)" : "rgba(255,255,255,0.06)", color: r.me ? "#8ab0ff" : C.textPrimary, border: r.me ? "1px solid rgba(61,125,232,0.35)" : "1px solid rgba(255,255,255,0.08)", cursor: "pointer" }} />)}</Box>}
                   </Box>
-                  <Box sx={{ position: "absolute", top: -10, right: 12, display: "flex", gap: 0.2, bgcolor: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 1.5, p: 0.2, opacity: 0, ".MuiBox-root:hover > &": { opacity: 1 }, transition: "opacity 0.12s", zIndex: 1, display: { xs: "none", sm: "flex" } }}>
+                  <Box sx={{ position: "absolute", top: -10, right: 12, display: { xs: "none", sm: "flex" }, gap: 0.2, bgcolor: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 1.5, p: 0.2, opacity: 0, ".MuiBox-root:hover > &": { opacity: 1 }, transition: "opacity 0.12s", zIndex: 1 }}>
                     <Tooltip title="React"><IconButton size="small" onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)} sx={{ width: 26, height: 26, color: C.textMuted }}><EmojiIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
                     <Tooltip title="Reply"><IconButton size="small" onClick={() => { setThreadFor(m.id); setRightTab("thread"); setRightOpen(true); }} sx={{ width: 26, height: 26, color: C.textMuted }}><ReplyIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
                     <Tooltip title="Save"><IconButton size="small" onClick={() => toggleSave(m.id)} sx={{ width: 26, height: 26, color: m.saved ? "#5aa9ff" : C.textMuted }}><BookmarkIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>

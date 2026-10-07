@@ -12,7 +12,7 @@ export function useMattermost() {
   const [selectedChannel, setSelectedChannel] = useState("c5");
   const [selectedDM, setSelectedDM] = useState(null);
   const [messagesByChannel, setMessagesByChannel] = useState(INITIAL_MESSAGES);
-  const [threadFor, setThreadFor] = useState("f4");
+  const [threadForRaw, setThreadFor] = useState("f4");
   const [rightTab, setRightTab] = useState("thread");
   const [rightOpen, setRightOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState(""); // left sidebar filter
@@ -37,11 +37,10 @@ export function useMattermost() {
 
   const activeChannel = useMemo(() => channels.find((c) => c.id === selectedChannel), [channels, selectedChannel]);
   const activeMessages = useMemo(() => messagesByChannel[selectedChannel] || [], [messagesByChannel, selectedChannel]);
-
-  // clear stale thread when switching channel
-  useEffect(() => {
-    setThreadFor((prev) => (prev && !(messagesByChannel[selectedChannel] || []).some((m) => m.id === prev) ? null : prev));
-  }, [selectedChannel, messagesByChannel]);
+  const threadFor = useMemo(() => {
+    if (!threadForRaw) return null;
+    return (messagesByChannel[selectedChannel] || []).some((m) => m.id === threadForRaw) ? threadForRaw : null;
+  }, [threadForRaw, selectedChannel, messagesByChannel]);
 
   // auto scroll
   useEffect(() => {

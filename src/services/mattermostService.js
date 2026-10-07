@@ -8,7 +8,7 @@
  *
  * Frontend can keep using the same function names without changes.
  */
-import { INITIAL_CHANNELS, INITIAL_MESSAGES, USERS, THREAD_REPLIES } from "../data/mockMattermost";
+import { INITIAL_CHANNELS, INITIAL_MESSAGES, USERS } from "../data/mockMattermost";
 
 // Simulated latency for realistic UX
 const delay = (ms = 300) => new Promise((r) => setTimeout(r, ms));

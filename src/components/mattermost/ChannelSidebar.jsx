@@ -1,4 +1,4 @@
-import { Box, Typography, IconButton, InputBase, Avatar, Badge, Divider, Tooltip } from "@mui/material";
+import { Box, Typography, IconButton, InputBase, Avatar, Badge, Tooltip } from "@mui/material";
 import { Search as SearchIcon, Star as StarIcon, LockOutlined as LockIcon, Language as GlobeIcon, Add as AddIcon, ExpandMore as ExpandMoreIcon, FilterList as FilterListIcon, ForumOutlined as ThreadsIcon, Circle as CircleIcon } from "@mui/icons-material";
 import { C, LAYOUT } from "../../theme/mattermost";
 
@@ -7,7 +7,6 @@ import { C, LAYOUT } from "../../theme/mattermost";
  * Backend: channels -> GET /channels ; DMs -> GET /users/dms
  */
 export default function ChannelSidebar({
-  channels,
   filteredChannels,
   selectedChannel,
   selectedDM,

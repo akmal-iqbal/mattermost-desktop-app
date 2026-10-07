@@ -18,15 +18,7 @@ function createWindow() {
   });
 
   if (!app.isPackaged) {
-    const tryLoad = (port) => {
-      mainWindow.loadURL(`http://localhost:${port}`).catch(() => {
-        if (port === 5173) setTimeout(() => tryLoad(5174), 800);
-      });
-    };
-    tryLoad(5173);
-    mainWindow.webContents.on("did-fail-load", (_e, _code, _desc, url) => {
-      if (url.includes("5173")) setTimeout(() => mainWindow.loadURL("http://localhost:5174").catch(() => {}), 800);
-    });
+    mainWindow.loadURL("http://localhost:5173").catch(() => {});
   } else {
     mainWindow.loadFile(
       path.join(__dirname, "../dist/index.html")

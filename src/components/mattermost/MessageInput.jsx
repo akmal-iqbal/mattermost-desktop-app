@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Box, Typography, IconButton, InputBase, Paper, Avatar, Divider, Tooltip } from "@mui/material";
 import { AttachFile as AttachFileIcon, SentimentSatisfiedAltOutlined as EmojiIcon, Send as SendIcon } from "@mui/icons-material";
 import { C } from "../../theme/mattermost";

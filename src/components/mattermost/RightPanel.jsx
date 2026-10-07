@@ -1,5 +1,5 @@
-import { Box, Typography, IconButton, Avatar, Paper, InputBase, Divider, Tabs, Tab, Drawer, Chip, Badge, TextField } from "@mui/material";
-import { Close as CloseIcon, Search as SearchIcon, PushPinOutlined as PinIcon, DescriptionOutlined as FileIcon, ForumOutlined as ThreadsIcon, PeopleAltOutlined as PeopleIcon, MoreHoriz as MoreIcon } from "@mui/icons-material";
+import { Box, Typography, IconButton, Avatar, Paper, InputBase, Tabs, Tab, Drawer, Badge, TextField } from "@mui/material";
+import { Close as CloseIcon, Search as SearchIcon, PushPinOutlined as PinIcon, DescriptionOutlined as FileIcon, ForumOutlined as ThreadsIcon, MoreHoriz as MoreIcon } from "@mui/icons-material";
 import { C, LAYOUT } from "../../theme/mattermost";
 import { USERS } from "../../data/mockMattermost";
 

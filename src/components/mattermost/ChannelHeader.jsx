@@ -39,4 +39,4 @@ export default function ChannelHeader({ channel, isDM, dmUser, activeMessages, o
       </Box>
     </Box>
   );
-}
+} 
