@@ -44,7 +44,7 @@ export default function ChannelHeader({ channel, isDM, dmUser, activeMessages, o
         <Tooltip title="Search in channel"><IconButton size="small" onClick={() => onToggleRight("search")} sx={{ color: rightTab === "search" && rightOpen ? "#fff" : C.textMuted, bgcolor: rightTab === "search" && rightOpen ? "rgba(255,255,255,0.10)" : "transparent" }}><SearchIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>
         <Tooltip title="Members"><IconButton size="small" onClick={() => onToggleRight("members")} sx={{ color: rightTab === "members" && rightOpen ? "#fff" : C.textMuted, bgcolor: rightTab === "members" && rightOpen ? "rgba(255,255,255,0.10)" : "transparent", display: { xs: "none", sm: "inline-flex" } }}><PeopleIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>
         <Tooltip title="Pinned"><IconButton size="small" onClick={() => onToggleRight("pinned")} sx={{ color: rightTab === "pinned" && rightOpen ? "#fff" : C.textMuted }}><PinIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>
-        <Tooltip title="Files"><IconButton size="small" onClick={() => onToggleRight("files")} sx={{ color: rightTab === "files" && rightOpen ? "#fff" : C.textMuted }}><FileIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>
+        <Tooltip title="Files"><IconButton size="small" onClick={() => onToggleRight("files")} sx={{ color: rightTab === "files" && rightOpen ? "#fff" : C.textMuted, display: { xs: "none", sm: "inline-flex" } }}><FileIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>
         <IconButton size="small" onClick={() => onToggleRight("thread")} sx={{ color: C.textMuted }} aria-label="Channel info"><InfoIcon sx={{ fontSize: 19 }} /></IconButton>
       </Box>
     </Box>

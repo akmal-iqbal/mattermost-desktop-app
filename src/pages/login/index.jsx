@@ -8,8 +8,8 @@ const Login = () => {
     navigate("/home");
   };
   return (
-    <Box sx={{minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center"}}>
-        <Box sx={{width: 400, display: "flex", flexDirection: "column", gap: 2}}>
+    <Box sx={{minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", px: 2, py: 3}}>
+        <Box sx={{width: { xs: "100%", sm: 400 }, maxWidth: 400, display: "flex", flexDirection: "column", gap: 2}}>
             <Typography variant="h4">Login</Typography>
             <TextField label="Username" variant="outlined" fullWidth />
             <TextField label="Password" variant="outlined" type="password" fullWidth />

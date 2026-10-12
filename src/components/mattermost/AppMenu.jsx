@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Menu, MenuItem, Divider, Typography, Paper } from "@mui/material";
+import { Menu, MenuItem, MenuList, Divider, Typography, Paper } from "@mui/material";
 import { ChevronRight as SubArrow } from "@mui/icons-material";
 
 /**
@@ -90,10 +90,10 @@ const MENUS = [
 
 const paperSx = {
   minWidth: 190,
-  bgcolor: "#fff",
-  border: "1px solid #e5e8ee",
+  bgcolor: "#1e2e46",
+  border: "1px solid rgba(255,255,255,0.09)",
   borderRadius: "10px",
-  boxShadow: "0 12px 32px rgba(15,23,42,0.18)",
+  boxShadow: "0 12px 32px rgba(0,0,0,0.5)",
   p: 0.6,
   overflow: "hidden",
 };
@@ -103,10 +103,11 @@ const itemSx = {
   py: 0.75,
   borderRadius: "6px",
   fontSize: 13,
-  color: "#1f2937",
+  color: "#e2e8f0",
   gap: 1,
-  "&:hover": { bgcolor: "#f1f5f9" },
-  "&.Mui-selected": { bgcolor: "#f1f5f9" },
+  "&:hover": { bgcolor: "rgba(255,255,255,0.07)" },
+  "&.Mui-selected": { bgcolor: "rgba(61,125,232,0.20)" },
+  "&.Mui-selected:hover": { bgcolor: "rgba(61,125,232,0.26)" },
 };
 
 export default function AppMenu({ anchorEl, onClose }) {
@@ -171,15 +172,17 @@ export default function AppMenu({ anchorEl, onClose }) {
 
       {open && activeMenu && (
         <Paper sx={{ ...paperSx, position: "fixed", left: subPos.left, top: subPos.top, zIndex: 1400 }}>
-          {activeMenu.items.map((it) =>
-            it.sep ? (
-              <Divider key={it.id} sx={{ borderColor: "#eef1f4", my: 0.4 }} />
-            ) : (
-              <MenuItem key={it.id} onClick={() => runAction(activeMenu.id, it.id)} sx={itemSx}>
-                <Typography sx={{ flex: 1, fontSize: 13 }}>{it.label}</Typography>
-              </MenuItem>
-            ),
-          )}
+          <MenuList dense={false} sx={{ p: 0 }}>
+            {activeMenu.items.map((it) =>
+              it.sep ? (
+                <Divider key={it.id} sx={{ borderColor: "rgba(255,255,255,0.08)", my: 0.4 }} />
+              ) : (
+                <MenuItem key={it.id} onClick={() => runAction(activeMenu.id, it.id)} sx={itemSx}>
+                  <Typography sx={{ flex: 1, fontSize: 13 }}>{it.label}</Typography>
+                </MenuItem>
+              ),
+            )}
+          </MenuList>
         </Paper>
       )}
     </>

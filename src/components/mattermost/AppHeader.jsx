@@ -24,7 +24,7 @@ export default function AppHeader({ globalSearch, setGlobalSearch, globalResults
   const statusColor = userStatus === "online" ? "#3db33d" : userStatus === "away" ? "#ffbc1f" : userStatus === "dnd" ? "#e53935" : "#9aa4b2";
   const meAvatar = { display: "Akmal Iqbal", color: "#b08968", photoUrl: profilePhotoUrl };
   return (
-    <Box sx={{ height: 48, bgcolor: C.headerBg, display: "flex", alignItems: "center", px: { xs: 1, md: 1.2 }, gap: 1, flexShrink: 0, borderBottom: `1px solid ${C.border}` }}>
+    <Box sx={{ height: 48, bgcolor: C.headerBg, display: "flex", alignItems: "center", px: { xs: 0.75, md: 1.2 }, gap: { xs: 0.5, sm: 1 }, flexShrink: 0, borderBottom: `1px solid ${C.border}` }}>
       {/* sidebar expand/collapse — like screenshot hamburger area */}
       <Tooltip title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
         <IconButton size="small" onClick={onToggleSidebar} sx={{ color: C.textMuted, "&:hover": { bgcolor: "rgba(255,255,255,0.08)", color: "#fff" } }} aria-label="Toggle sidebar">
@@ -36,15 +36,15 @@ export default function AppHeader({ globalSearch, setGlobalSearch, globalResults
       </IconButton>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.7, minWidth: 0 }}>
         <Box sx={{ width: 28, height: 28, borderRadius: "50%", bgcolor: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, color: C.headerBg, fontSize: 13, flexShrink: 0 }}>M</Box>
-        <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: { xs: 14, md: 15 }, letterSpacing: -0.3, whiteSpace: "nowrap" }}>Mattermost</Typography>
+        <Typography sx={{ display: { xs: "none", sm: "block" }, color: "#fff", fontWeight: 800, fontSize: { xs: 14, md: 15 }, letterSpacing: -0.3, whiteSpace: "nowrap" }}>Mattermost</Typography>
         <Box sx={{ display: { xs: "none", sm: "block" }, ml: 0.5, px: 0.6, py: 0.15, bgcolor: "rgba(255,255,255,0.10)", borderRadius: "4px", fontSize: 9, fontWeight: 700, color: "#cbd5e1" }}>FREE EDITION</Box>
       </Box>
-      <Box sx={{ display: "flex", ml: 0.5 }}>
+      <Box sx={{ display: { xs: "none", sm: "flex" }, ml: 0.5 }}>
         <IconButton size="small" sx={{ color: C.textMuted }} aria-label="Back"><ArrowBackIcon sx={{ fontSize: 17 }} /></IconButton>
         <IconButton size="small" sx={{ color: "#4b5563" }} aria-label="Forward"><ArrowForwardIcon sx={{ fontSize: 17 }} /></IconButton>
       </Box>
 
-      <Box sx={{ flex: 1, display: "flex", justifyContent: "center", position: "relative", mx: 1 }}>
+      <Box sx={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", position: "relative", mx: { xs: 0.25, sm: 1 } }}>
         <Paper sx={{ display: "flex", alignItems: "center", px: 1.2, py: 0.4, bgcolor: "#2b3a55", borderRadius: 1.5, width: { xs: "100%", md: 520 }, maxWidth: "100%", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "none" }}>
           <SearchIcon sx={{ fontSize: 16, color: C.textMuted, mr: 1 }} />
           <InputBase id="global-search" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} placeholder="Search" sx={{ flex: 1, fontSize: 13, color: C.textPrimary, "& input::placeholder": { color: "#8b98ab", opacity: 1 } }} />
@@ -63,14 +63,14 @@ export default function AppHeader({ globalSearch, setGlobalSearch, globalResults
         )}
       </Box>
 
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.3, flexShrink: 0 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 0.15, sm: 0.3 }, flexShrink: 0 }}>
         <Tooltip title="Help">
-          <IconButton size="small" sx={{ color: C.textMuted }} aria-label="Help">
+          <IconButton size="small" sx={{ color: C.textMuted, display: { xs: "none", sm: "inline-flex" } }} aria-label="Help">
             <Box sx={{ width: 17, height: 17, borderRadius: "50%", border: "1.6px solid currentColor", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>?</Box>
           </IconButton>
         </Tooltip>
-        <Tooltip title="Mentions"><IconButton size="small" sx={{ color: C.textMuted }}><AtIcon fontSize="small" /></IconButton></Tooltip>
-        <Tooltip title="Saved"><IconButton size="small" sx={{ color: C.textMuted }}><BookmarkIcon fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title="Mentions"><IconButton size="small" sx={{ color: C.textMuted, display: { xs: "none", sm: "inline-flex" } }}><AtIcon fontSize="small" /></IconButton></Tooltip>
+        <Tooltip title="Saved"><IconButton size="small" sx={{ color: C.textMuted, display: { xs: "none", sm: "inline-flex" } }}><BookmarkIcon fontSize="small" /></IconButton></Tooltip>
         <Tooltip title="Settings"><IconButton size="small" onClick={onOpenSettings} sx={{ color: C.textMuted, "&:hover": { color: "#fff", bgcolor: "rgba(255,255,255,0.08)" } }}><SettingsIcon fontSize="small" /></IconButton></Tooltip>
         <Divider orientation="vertical" flexItem sx={{ mx: 0.7, borderColor: C.border, height: 20, alignSelf: "center", display: { xs: "none", sm: "block" } }} />
         <Box sx={{ position: "relative" }}>

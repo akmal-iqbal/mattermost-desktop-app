@@ -74,8 +74,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    minWidth: 1000,
-    minHeight: 700,
+    minWidth: 800,
+    minHeight: 560,
     autoHideMenuBar: true,
     frame: false,
     titleBarStyle: "hidden",

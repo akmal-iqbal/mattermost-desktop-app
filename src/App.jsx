@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme  } from "@mui/material";
 import Login from './pages/login'
 import Register from './pages/Register'
 import Home from './pages/Home'
+import ErrorBoundary from './components/ErrorBoundary'
 const FONT =
   '"Plus Jakarta Sans","Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif';
 const theme = createTheme({
@@ -53,6 +54,7 @@ const theme = createTheme({
 function App() {
   return (
     <ThemeProvider theme={theme}>
+      <ErrorBoundary>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/Register" element={<Register />} />
@@ -60,6 +62,7 @@ function App() {
         {/* Open login automatically at "/" */}
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }
