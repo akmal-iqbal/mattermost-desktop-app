@@ -1,7 +1,12 @@
-import { Box, Typography, Avatar, Chip, Divider, IconButton, Paper, TextField, Button, Tooltip, Badge } from "@mui/material";
-import { PushPin as PinFilledIcon, Bookmark as BookmarkFilledIcon, Reply as ReplyIcon, SentimentSatisfiedAltOutlined as EmojiIcon, BookmarkBorder as BookmarkIcon, PushPinOutlined as PinIcon, MoreHoriz as MoreIcon, StarBorder as StarBorderIcon, EditOutlined as EditIcon, DescriptionOutlined as FileIcon } from "@mui/icons-material";
+import { useState } from "react";
+import { Box, Typography, Avatar, Chip, Divider, IconButton, TextField, Button, Tooltip, Badge, Dialog } from "@mui/material";
+import { PushPin as PinFilledIcon, Bookmark as BookmarkFilledIcon, Reply as ReplyIcon, SentimentSatisfiedAltOutlined as EmojiIcon, BookmarkBorder as BookmarkIcon, PushPinOutlined as PinIcon, MoreHoriz as MoreIcon, StarBorder as StarBorderIcon, EditOutlined as EditIcon, DescriptionOutlined as FileIcon, Close as CloseIcon } from "@mui/icons-material";
 import { C } from "../../theme/mattermost";
-import { renderMessageHtml, REACTION_QUICK } from "../../data/mockMattermost";
+import { formatFileSize } from "../../utils/files";
+import { renderMessageHtml } from "../../data/mockMattermost";
+import MessageAttachments from "./MessageAttachments";
+import EmojiPicker from "./EmojiPicker";
+import UserAvatar from "./UserAvatar";
 
 /**
  * Message list with DM intro, system messages, dish/image & thread meta
@@ -13,6 +18,8 @@ export default function MessageList({
   toggleReaction, emojiFor, setEmojiFor, toggleSave, togglePin, setMsgMenu, setThreadFor, setRightTab, setRightOpen,
 }) {
   const isDM = Boolean(selectedDM);
+  const [preview, setPreview] = useState(null);
+  const [hoverId, setHoverId] = useState(null);
   if (!isDM && activeMessages.length === 0 && selectedChannel === "c6") {
     // channel purpose already shown in parent, keep empty handling below
   }
@@ -72,8 +79,8 @@ export default function MessageList({
             return (
               <Box key={m.id}>
                 {m.divider && <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2, my: 1 }}><Divider sx={{ flex: 1, borderColor: C.border }} /><Typography sx={{ fontSize: 11, color: C.textMuted, bgcolor: C.mainBg, px: 1 }}>{m.divider}</Typography><Divider sx={{ flex: 1, borderColor: C.border }} /></Box>}
-                <Box sx={{ display: "flex", gap: 1.2, px: { xs: 1, md: 1.8 }, py: 0.9, "&:hover": { bgcolor: "rgba(255,255,255,0.03)" }, position: "relative", borderLeft: m.pinned ? "2px solid #facc15" : "2px solid transparent" }}>
-                  <Avatar sx={{ width: { xs: 30, md: 34 }, height: { xs: 30, md: 34 }, bgcolor: u.color, color: "#fff", fontSize: { xs: 11, md: 13 }, fontWeight: 700, mt: 0.2, flexShrink: 0 }}>{(u.display || "?")[0]}</Avatar>
+                <Box onMouseEnter={() => setHoverId(m.id)} onMouseLeave={() => setHoverId(null)} sx={{ display: "flex", gap: 1.2, px: { xs: 1, md: 1.8 }, py: 0.9, "&:hover": { bgcolor: "rgba(255,255,255,0.03)" }, position: "relative", borderLeft: m.pinned ? "2px solid #facc15" : "2px solid transparent" }}>
+                  <UserAvatar user={u} size={{ xs: 30, md: 34 }} fontSize={{ xs: 11, md: 13 }} sx={{ mt: 0.2, flexShrink: 0 }} />
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
                       <Typography sx={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{u.display}</Typography>
@@ -94,8 +101,8 @@ export default function MessageList({
                     ) : (
                       <Typography sx={{ fontSize: { xs: 12.5, md: 13.2 }, color: C.textPrimary, mt: 0.25, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.5, "& strong": { fontWeight: 700, color: "#fff" }, "& code": { bgcolor: "rgba(255,255,255,0.08)", px: 0.5, py: 0.15, borderRadius: 0.5, fontSize: 12, fontFamily: "monospace" } }} dangerouslySetInnerHTML={{ __html: renderMessageHtml(m.text) }} />
                     )}
-                    {m.hasImage && (
-                      <Box sx={{ mt: 1, borderRadius: 2, overflow: "hidden", border: `1px solid ${C.border}`, maxWidth: { xs: "100%", sm: 520 }, bgcolor: "#fff" }}>
+                    <MessageAttachments attachments={m.attachments} onPreview={setPreview} />
+                    {m.hasImage && (                      <Box sx={{ mt: 1, borderRadius: 2, overflow: "hidden", border: `1px solid ${C.border}`, maxWidth: { xs: "100%", sm: 520 }, bgcolor: "#fff" }}>
                         <Box sx={{ height: 20, bgcolor: "#f1a7c8", display: "flex", alignItems: "center", gap: 0.5, px: 1, borderBottom: "1px solid #e8a0c0" }}><Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: "#ff5f56" }} /><Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: "#ffbd2e" }} /><Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: "#27c93f" }} /><Box sx={{ flex: 1, mx: 1, height: 12, bgcolor: "#fff", borderRadius: 10 }} /></Box>
                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.6, py: 0.8, borderBottom: "1px solid #eee" }}><Box sx={{ display: "flex", alignItems: "center", gap: 0.8, bgcolor: "#0b2a5b", color: "#fff", px: 1, py: 0.3, borderRadius: 10, fontSize: 10, fontWeight: 800 }}><Box sx={{ width: 16, height: 16, bgcolor: "#fff", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#0b2a5b", fontSize: 8, fontWeight: 900 }}>◈</Box> IPS UNI</Box><Box sx={{ border: "1.5px solid #0b2a5b", color: "#0b2a5b", px: 1, py: 0.2, borderRadius: 10, fontSize: 9, fontWeight: 700 }}>Enroll Now</Box></Box>
                         <Box sx={{ background: "linear-gradient(135deg,#1a3a7a 0%,#2a5db0 100%)", px: 2.5, py: 2.2, textAlign: "center", color: "#fff" }}><Typography sx={{ fontSize: 13, fontWeight: 800 }}>Credentialing Specialist Course</Typography><Typography sx={{ fontSize: 10, mt: 0.4, opacity: 0.9 }}><Box component="span" sx={{ fontWeight: 700 }}>Class Mode:</Box> Physical & Online</Typography><Box sx={{ display: "flex", gap: 1.2, justifyContent: "center", mt: 1.5, flexWrap: "wrap" }}><Box sx={{ bgcolor: "#fff", color: "#1a3a7a", px: 1.6, py: 0.7, borderRadius: 1.5, minWidth: 96, border: "2px solid #e53935" }}><Typography sx={{ fontSize: 10, fontWeight: 800 }}>Admission Open</Typography><Typography sx={{ fontSize: 8, color: "#666" }}>Open</Typography></Box><Box sx={{ bgcolor: "#fff", color: "#1a3a7a", px: 1.6, py: 0.7, borderRadius: 1.5, minWidth: 96 }}><Typography sx={{ fontSize: 10, fontWeight: 800 }}>Course Fee</Typography><Typography sx={{ fontSize: 8, color: "#666" }}>PKR 20,000</Typography></Box></Box></Box>
@@ -111,19 +118,21 @@ export default function MessageList({
                     )}
                     {m.reactions?.length > 0 && <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, mt: 0.6, flexWrap: "wrap" }}>{m.reactions.map((r) => <Chip key={r.emoji} label={`${r.emoji} ${r.count}`} size="small" onClick={() => toggleReaction(m.id, r.emoji)} sx={{ height: 22, fontSize: 11, bgcolor: r.me ? "rgba(61,125,232,0.18)" : "rgba(255,255,255,0.06)", color: r.me ? "#8ab0ff" : C.textPrimary, border: r.me ? "1px solid rgba(61,125,232,0.35)" : "1px solid rgba(255,255,255,0.08)", cursor: "pointer" }} />)}</Box>}
                   </Box>
-                  <Box sx={{ position: "absolute", top: -10, right: 12, display: { xs: "none", sm: "flex" }, gap: 0.2, bgcolor: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 1.5, p: 0.2, opacity: 0, ".MuiBox-root:hover > &": { opacity: 1 }, transition: "opacity 0.12s", zIndex: 1 }}>
-                    <Tooltip title="React"><IconButton size="small" onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)} sx={{ width: 26, height: 26, color: C.textMuted }}><EmojiIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
-                    <Tooltip title="Reply"><IconButton size="small" onClick={() => { setThreadFor(m.id); setRightTab("thread"); setRightOpen(true); }} sx={{ width: 26, height: 26, color: C.textMuted }}><ReplyIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
-                    <Tooltip title="Save"><IconButton size="small" onClick={() => toggleSave(m.id)} sx={{ width: 26, height: 26, color: m.saved ? "#5aa9ff" : C.textMuted }}><BookmarkIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
-                    <Tooltip title="Pin"><IconButton size="small" onClick={() => togglePin(m.id)} sx={{ width: 26, height: 26, color: m.pinned ? "#facc15" : C.textMuted }}><PinIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
-                    <IconButton size="small" onClick={(e) => setMsgMenu({ id: m.id, anchor: e.currentTarget })} sx={{ width: 26, height: 26, color: C.textMuted }} aria-label="More"><MoreIcon sx={{ fontSize: 14 }} /></IconButton>
+                  {/* Hover toolbar — actions only (quick strip removed) */}
+                  <Box sx={{ position: "absolute", top: -10, right: 12, display: hoverId === m.id ? { xs: "none", sm: "flex" } : "none", zIndex: 5 }}>
+                    <Box sx={{ display: "flex", gap: 0.2, bgcolor: C.inputBg, border: `1px solid ${C.border}`, borderRadius: 1.5, p: 0.2 }}>
+                      <Tooltip title="React with any emoji"><IconButton size="small" onClick={() => setEmojiFor(emojiFor === m.id ? null : m.id)} sx={{ width: 26, height: 26, color: emojiFor === m.id ? "#5aa9ff" : C.textMuted, bgcolor: emojiFor === m.id ? "rgba(90,169,255,0.12)" : "transparent" }}><EmojiIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
+                      <Tooltip title="Reply"><IconButton size="small" onClick={() => { setThreadFor(m.id); setRightTab("thread"); setRightOpen(true); }} sx={{ width: 26, height: 26, color: C.textMuted }}><ReplyIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
+                      <Tooltip title="Save"><IconButton size="small" onClick={() => toggleSave(m.id)} sx={{ width: 26, height: 26, color: m.saved ? "#5aa9ff" : C.textMuted }}><BookmarkIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
+                      <Tooltip title="Pin"><IconButton size="small" onClick={() => togglePin(m.id)} sx={{ width: 26, height: 26, color: m.pinned ? "#facc15" : C.textMuted }}><PinIcon sx={{ fontSize: 14 }} /></IconButton></Tooltip>
+                      <IconButton size="small" onClick={(e) => setMsgMenu({ id: m.id, anchor: e.currentTarget })} sx={{ width: 26, height: 26, color: C.textMuted }} aria-label="More"><MoreIcon sx={{ fontSize: 14 }} /></IconButton>
+                    </Box>
                   </Box>
+                  {/* Full emoji library — any emoji appends as a reaction */}
                   {emojiFor === m.id && (
-                    <Paper sx={{ position: "absolute", bottom: "100%", right: 12, mb: 0.5, p: 0.5, display: "flex", gap: 0.3, zIndex: 10, borderRadius: 2, bgcolor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 24px rgba(0,0,0,0.45)" }}>
-                      {REACTION_QUICK.map((e) => (
-                        <Box key={e} onClick={() => { toggleReaction(m.id, e); setEmojiFor(null); }} sx={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 1, cursor: "pointer", fontSize: 16, "&:hover": { bgcolor: "rgba(255,255,255,0.08)" } }}>{e}</Box>
-                      ))}
-                    </Paper>
+                    <Box sx={{ position: "absolute", bottom: "100%", right: 12, mb: 0.5, zIndex: 20 }}>
+                      <EmojiPicker onSelect={(emoji) => { toggleReaction(m.id, emoji); setEmojiFor(null); }} />
+                    </Box>
                   )}
                 </Box>
               </Box>
@@ -131,6 +140,22 @@ export default function MessageList({
           })}
         </Box>
       )}
+      {/* Image lightbox */}
+      <Dialog open={Boolean(preview)} onClose={() => setPreview(null)} maxWidth="md" slotProps={{ paper: { sx: { bgcolor: "#0f172a", borderRadius: 2, border: "1px solid rgba(255,255,255,0.1)", maxWidth: "92vw", overflow: "hidden" } } }}>
+        {preview && (
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, px: 1.5, py: 1, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: 13, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{preview.name}</Typography>
+                <Typography sx={{ fontSize: 11, color: C.textMuted }}>{formatFileSize(preview.size)}</Typography>
+              </Box>
+              <Box component="a" href={preview.url} download={preview.name} sx={{ fontSize: 12, fontWeight: 600, color: C.link, textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>Download</Box>
+              <IconButton size="small" onClick={() => setPreview(null)} sx={{ color: C.textMuted }} aria-label="Close preview"><CloseIcon sx={{ fontSize: 16 }} /></IconButton>
+            </Box>
+            <Box component="img" src={preview.url} alt={preview.name} sx={{ width: "100%", maxHeight: "78vh", objectFit: "contain", display: "block", bgcolor: "#000" }} />
+          </Box>
+        )}
+      </Dialog>
     </Box>
   );
 }

@@ -17,7 +17,17 @@ export default function ChannelHeader({ channel, isDM, dmUser, activeMessages, o
         {!isDM && (
           <>
             <Divider orientation="vertical" flexItem sx={{ mx: 0.8, borderColor: C.border, height: 18, alignSelf: "center", display: { xs: "none", sm: "block" } }} />
-            <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 0.4, color: C.textMuted }}><PeopleIcon sx={{ fontSize: 15 }} /><Typography sx={{ fontSize: 11.5, fontWeight: 600 }}>{members}</Typography></Box>
+            <Tooltip title="View members">
+              <Box
+                onClick={() => onToggleRight("members")}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === "Enter") onToggleRight("members"); }}
+                sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 0.4, px: 0.6, py: 0.3, borderRadius: 1, cursor: "pointer", color: rightTab === "members" && rightOpen ? "#fff" : C.textMuted, bgcolor: rightTab === "members" && rightOpen ? "rgba(255,255,255,0.10)" : "transparent", "&:hover": { color: "#fff", bgcolor: "rgba(255,255,255,0.08)" } }}
+              >
+                <PeopleIcon sx={{ fontSize: 15 }} /><Typography sx={{ fontSize: 11.5, fontWeight: 600 }}>{members}</Typography>
+              </Box>
+            </Tooltip>
             <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 0.4, color: C.textMuted, ml: 0.8 }}><PinIcon sx={{ fontSize: 15 }} /><Typography sx={{ fontSize: 11.5, fontWeight: 600 }}>{pinned}</Typography></Box>
             <FileIcon sx={{ fontSize: 15, color: C.textMuted, ml: 0.8, display: { xs: "none", sm: "block" } }} />
           </>

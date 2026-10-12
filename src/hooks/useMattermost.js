@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { INITIAL_CHANNELS, INITIAL_MESSAGES, getUser, formatNow } from "../data/mockMattermost";
+import { INITIAL_CHANNELS, INITIAL_MESSAGES, THREAD_REPLIES, getUser, formatNow } from "../data/mockMattermost";
 
 /**
  * Central hook for Mattermost state
@@ -12,6 +12,7 @@ export function useMattermost() {
   const [selectedChannel, setSelectedChannel] = useState("c5");
   const [selectedDM, setSelectedDM] = useState(null);
   const [messagesByChannel, setMessagesByChannel] = useState(INITIAL_MESSAGES);
+  const [threadReplies, setThreadReplies] = useState(THREAD_REPLIES);
   const [threadForRaw, setThreadFor] = useState("f4");
   const [rightTab, setRightTab] = useState("thread");
   const [rightOpen, setRightOpen] = useState(true);
@@ -30,6 +31,7 @@ export function useMattermost() {
   const [showSettings, setShowSettings] = useState(false);
   const [settingsTab, setSettingsTab] = useState("notifications");
   const [userStatus, setUserStatus] = useState("online");
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   const listRef = useRef(null);
   const inputRef = useRef(null);
@@ -50,17 +52,17 @@ export function useMattermost() {
   // hotkeys
   useEffect(() => {
     const h = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); document.getElementById("global-search")?.focus(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setSwitcherOpen(true); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") { e.preventDefault(); inputRef.current?.focus(); }
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, []);
 
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback((attachments = []) => {
     const text = input.trim();
-    if (!text) return;
-    const newMsg = { id: "m" + Date.now(), userId: "me", time: formatNow(), text, reactions: [], replies: 0, pinned: false, saved: false };
+    if (!text && attachments.length === 0) return;
+    const newMsg = { id: "m" + Date.now(), userId: "me", time: formatNow(), ts: Date.now(), text, reactions: [], replies: 0, pinned: false, saved: false, ...(attachments.length ? { attachments } : {}) };
     setMessagesByChannel((prev) => ({ ...prev, [selectedChannel]: [...(prev[selectedChannel] || []), newMsg] }));
     setInput("");
   }, [input, selectedChannel]);
@@ -104,6 +106,19 @@ export function useMattermost() {
     setMessagesByChannel((prev) => ({ ...prev, [selectedChannel]: (prev[selectedChannel] || []).map((m) => (m.id === id ? { ...m, saved: !m.saved } : m)) }));
   }, [selectedChannel]);
 
+  const toggleFollow = useCallback((id) => {
+    if (!id) return;
+    setMessagesByChannel((prev) => ({ ...prev, [selectedChannel]: (prev[selectedChannel] || []).map((m) => (m.id === id ? { ...m, follow: !m.follow } : m)) }));
+  }, [selectedChannel]);
+
+  const addThreadReply = useCallback((threadId, text, attachments = []) => {
+    const t = String(text || "").trim();
+    if ((!t && attachments.length === 0) || !threadId) return;
+    const reply = { id: "r" + Date.now(), userId: "me", time: formatNow(), ts: Date.now(), text: t, ...(attachments.length ? { attachments } : {}) };
+    setThreadReplies((prev) => ({ ...prev, [threadId]: [...(prev[threadId] || []), reply] }));
+    setMessagesByChannel((prev) => ({ ...prev, [selectedChannel]: (prev[selectedChannel] || []).map((m) => (m.id === threadId ? { ...m, replies: (m.replies || 0) + 1 } : m)) }));
+  }, [selectedChannel]);
+
   const createChannel = useCallback(() => {
     const name = newChannelName.trim();
     if (!name) return;
@@ -140,12 +155,12 @@ export function useMattermost() {
 
   return {
     // state
-    channels, selectedChannel, selectedDM, messagesByChannel, activeChannel, activeMessages, threadFor, rightTab, rightOpen, searchQuery, rightSearch, globalSearch, input, editingId, editText, showCreateChannel, newChannelName, newChannelType, showAddDM, showProfile, profileTab, showSettings, settingsTab, userStatus,
+    channels, selectedChannel, selectedDM, messagesByChannel, activeChannel, activeMessages, threadFor, rightTab, rightOpen, searchQuery, rightSearch, globalSearch, input, editingId, editText, showCreateChannel, newChannelName, newChannelType, showAddDM, showProfile, profileTab, showSettings, settingsTab, userStatus, threadReplies, switcherOpen,
     // setters
-    setSelectedChannel, setSelectedDM, setMessagesByChannel, setThreadFor, setRightTab, setRightOpen, setSearchQuery, setRightSearch, setGlobalSearch, setInput, setEditingId, setEditText, setShowCreateChannel, setNewChannelName, setNewChannelType, setShowAddDM, setShowProfile, setProfileTab, setShowSettings, setSettingsTab, setUserStatus,
+    setSelectedChannel, setSelectedDM, setMessagesByChannel, setThreadFor, setRightTab, setRightOpen, setSearchQuery, setRightSearch, setGlobalSearch, setInput, setEditingId, setEditText, setShowCreateChannel, setNewChannelName, setNewChannelType, setShowAddDM, setShowProfile, setProfileTab, setShowSettings, setSettingsTab, setUserStatus, setSwitcherOpen,
     // refs
     listRef, inputRef, fileRef,
     // handlers
-    sendMessage, deleteMessage, startEdit, saveEdit, toggleReaction, toggleFavorite, togglePin, toggleSave, createChannel, filteredChannels, globalResults, getUser,
+    sendMessage, deleteMessage, startEdit, saveEdit, toggleReaction, toggleFavorite, togglePin, toggleSave, createChannel, filteredChannels, globalResults, getUser, addThreadReply, toggleFollow,
   };
 }

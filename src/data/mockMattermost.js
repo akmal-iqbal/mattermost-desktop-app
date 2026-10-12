@@ -6,16 +6,18 @@
  */
 
 // --- Users ---
+// inChannel:false -> grouped under "NOT IN CHANNEL" in @mention popup
+// (backend: GET /channels/:id/members). statusEmoji shown at row end.
 export const USERS = [
   { id: "u1", name: "shahrukh.rafi-dm", display: "shahrukh.rafi-dm", color: "#7c4dff", status: "online" },
   { id: "u2", name: "Alisha Noor-SD", display: "Alisha Noor", color: "#4caf50", status: "online" },
-  { id: "u3", name: "muhammad.jamal-sd", display: "muhammad.jamal-sd", color: "#ff9800", status: "away" },
-  { id: "u4", name: "Muhammad Ali Bin S...", display: "Muhammad Ali Bin S...", color: "#546e7a", status: "offline", unread: 4 },
+  { id: "u3", name: "muhammad.jamal-sd", display: "muhammad.jamal-sd", color: "#ff9800", status: "away", inChannel: false },
+  { id: "u4", name: "Muhammad Ali Bin S...", display: "Muhammad Ali Bin S...", color: "#546e7a", status: "offline", unread: 4, inChannel: false, statusEmoji: "🐭" },
   { id: "u5", name: "Mahnoor Fatima-SD", display: "Mahnoor Fatima-SD", color: "#ff6d00", status: "offline" },
   { id: "u6", name: "uzair.munirdm", display: "uzair.munirdm", color: "#e91e63", status: "online" },
-  { id: "u7", name: "Mirza Arman", display: "Mirza Arman", color: "#8d6e63", status: "online" },
+  { id: "u7", name: "Mirza Arman", display: "Mirza Arman", color: "#8d6e63", status: "online", role: "admin" },
   { id: "u8", name: "rozeena.arif-sd", display: "rozeena.arif-sd", color: "#ff8f00", status: "online" },
-  { id: "u9", name: "M.Usman-SD Ext-5504", display: "M.Usman-SD Ext-5504", color: "#00897b", status: "offline" },
+  { id: "u9", name: "M.Usman-SD Ext-5504", display: "M.Usman-SD Ext-5504", color: "#00897b", status: "offline", inChannel: false },
   { id: "me", name: "akmal.iqbal", display: "Akmal Iqbal", color: "#7c3aed", status: "online" },
 ];
 

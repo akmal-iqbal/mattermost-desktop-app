@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import {
   Box,
   useMediaQuery,
@@ -24,24 +24,26 @@ import { useNavigate } from "react-router-dom";
 import {
   Menu as MenuIcon,
   Close as CloseIcon,
-  Add as AddIcon,
-  ExpandMore as ExpandMoreIcon,
   LockOutlined as LockIcon,
   Language as GlobeIcon,
   KeyboardArrowDown as ArrowDownIcon,
+  CloudUploadOutlined as DropIcon,
 } from "@mui/icons-material";
 
 // modular imports — backend dev: swap mockData/services for real API
 import { C } from "../../theme/mattermost";
 import { USERS } from "../../data/mockMattermost";
+import { MAX_ATTACHMENTS, toPendingAttachment, toMessageAttachment } from "../../utils/files";
 import { useMattermost } from "../../hooks/useMattermost";
-import ServerSidebar from "../../components/mattermost/ServerSidebar";
 import AppHeader from "../../components/mattermost/AppHeader";
+import WindowTabBar from "../../components/mattermost/WindowTabBar";
 import ChannelSidebar from "../../components/mattermost/ChannelSidebar";
+import SidebarResizeHandle from "../../components/mattermost/SidebarResizeHandle";
 import ChannelHeader from "../../components/mattermost/ChannelHeader";
 import MessageList from "../../components/mattermost/MessageList";
 import MessageInput from "../../components/mattermost/MessageInput";
 import RightPanel from "../../components/mattermost/RightPanel";
+import QuickSwitcher from "../../components/mattermost/QuickSwitcher";
 import ProfileDialog from "../../components/mattermost/ProfileDialog";
 import SettingsDialog from "../../components/mattermost/SettingsDialog";
 
@@ -60,6 +62,40 @@ export default function Home() {
 
   const mm = useMattermost();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeStart = useRef({ x: 0, width: 256 });
+
+  // Sidebar drag-to-resize (cursor ew-resize divider)
+  const handleResizeMouseDown = useCallback(
+    (e) => {
+      e.preventDefault();
+      resizeStart.current = { x: e.clientX, width: sidebarWidth };
+      setIsResizing(true);
+    },
+    [sidebarWidth],
+  );
+
+  useEffect(() => {
+    if (!isResizing) return;
+    const onMove = (e) => {
+      const dx = e.clientX - resizeStart.current.x;
+      const next = Math.min(420, Math.max(180, resizeStart.current.width + dx));
+      setSidebarWidth(next);
+    };
+    const onUp = () => setIsResizing(false);
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, [isResizing]);
   const [profileData, setProfileData] = useState({
     fullName: "Akmal Iqbal",
     username: "akmal.iqbal-sd",
@@ -67,6 +103,15 @@ export default function Home() {
     position: "Web Development",
     email: "akmal.iqbal@ipscloud.co",
     pictureDate: "Dec 06, 2024",
+    // restored from previous session (blob: URLs are dead after restart, ignore them)
+    photoUrl: (() => {
+      try {
+        const v = localStorage.getItem("me-photo");
+        return v && !v.startsWith("blob:") ? v : null;
+      } catch {
+        return null;
+      }
+    })(),
   });
   const [settingsData, setSettingsData] = useState({
     desktopNotif: "All new messages",
@@ -74,12 +119,34 @@ export default function Home() {
     emailEnabled: false,
     keywords: '"akmal.iqbal-sd", "@channel", "@all", "@here"',
     highlight: "None",
+    // Display
+    theme: "Denim",
+    clockDisplay: "12-hour clock (example: 4:00 PM)",
+    teammateName: "Show first and last name",
+    onlineAvailability: true,
+    shareLastActive: true,
+    timezone: "(UTC+05:00) Islamabad, Karachi",
+    linkPreviews: true,
+    imagePreviews: "Expanded",
+    // Sidebar
+    groupUnread: false,
+    dmCount: "40",
+    // Advanced
+    sendOnCtrlEnter: "On only for code blocks starting with ```",
+    postFormatting: true,
+    joinLeave: true,
+    scrollPosition: "Start me where I left off",
+    syncDrafts: true,
   });
   const [anchorEl, setAnchorEl] = useState(null);
   const [mentionOpen, setMentionOpen] = useState(false);
   const [emojiFor, setEmojiFor] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [msgMenu, setMsgMenu] = useState(null);
+  // drag & drop attachments
+  const [pendingFiles, setPendingFiles] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
   // mutual exclusion: only one picker at a time
   const handleSetEmojiFor = (val) => {
     if (val) setShowEmojiPicker(false);
@@ -96,6 +163,15 @@ export default function Home() {
     [mm.selectedDM],
   );
   const isDM = Boolean(mm.selectedDM);
+  // "me" enriched with the uploaded profile photo (null until saved in Profile)
+  const usersWithPhoto = useMemo(
+    () => USERS.map((u) => (u.id === "me" && profileData.photoUrl ? { ...u, photoUrl: profileData.photoUrl } : u)),
+    [profileData.photoUrl],
+  );
+  const getUserEx = (id) => {
+    const u = mm.getUser(id);
+    return u.id === "me" && profileData.photoUrl ? { ...u, photoUrl: profileData.photoUrl } : u;
+  };
   const threadMsg = useMemo(
     () =>
       mm.threadFor
@@ -119,8 +195,94 @@ export default function Home() {
   const handleSendKey = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      mm.sendMessage();
+      handleSend();
     }
+  };
+
+  // ---- drag & drop / paste / picker attachments ----
+  const addFiles = (fileList) => {
+    const incoming = Array.from(fileList || []).filter((f) => f && (f.size > 0 || f.name));
+    if (!incoming.length) return;
+    setPendingFiles((prev) => {
+      const room = Math.max(MAX_ATTACHMENTS - prev.length, 0);
+      return [...prev, ...incoming.slice(0, room).map(toPendingAttachment)];
+    });
+    mm.inputRef.current?.focus();
+  };
+
+  const removeAttachment = (id) => {
+    setPendingFiles((prev) => {
+      const found = prev.find((p) => p.id === id);
+      if (found) URL.revokeObjectURL(found.url);
+      return prev.filter((p) => p.id !== id);
+    });
+  };
+
+  const handleAttachInput = (e) => {
+    addFiles(e.target.files);
+    e.target.value = "";
+  };
+
+  const handlePaste = (e) => {
+    const files = e.clipboardData?.files;
+    if (files && files.length > 0) {
+      e.preventDefault();
+      addFiles(files);
+    }
+  };
+
+  const handleSend = () => {
+    const atts = pendingFiles.map(toMessageAttachment);
+    if (!mm.input.trim() && atts.length === 0) return;
+    mm.sendMessage(atts);
+    setPendingFiles([]);
+  };
+
+  // quick switcher (Ctrl+K) selection — mirrors sidebar selection
+  const handleSwitcherChannel = (id) => {
+    mm.setSelectedChannel(id);
+    mm.setSelectedDM(null);
+    mm.setSwitcherOpen(false);
+  };
+  const handleSwitcherDM = (id) => {
+    mm.setSelectedDM(id);
+    const dmId = "dm_" + id;
+    if (!mm.messagesByChannel[dmId]) mm.setMessagesByChannel((p) => ({ ...p, [dmId]: [] }));
+    mm.setSelectedChannel(dmId);
+    mm.setSwitcherOpen(false);
+  };
+
+  // Never let a stray drop navigate the window away (Electron safe)
+  useEffect(() => {
+    const prevent = (e) => e.preventDefault();
+    window.addEventListener("dragover", prevent);
+    window.addEventListener("drop", prevent);
+    return () => {
+      window.removeEventListener("dragover", prevent);
+      window.removeEventListener("drop", prevent);
+    };
+  }, []);
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    if (!e.dataTransfer?.types?.includes("Files")) return;
+    dragCounter.current += 1;
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    dragCounter.current = Math.max(dragCounter.current - 1, 0);
+    if (dragCounter.current === 0) setIsDragging(false);
+  };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+  };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    dragCounter.current = 0;
+    setIsDragging(false);
+    if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files);
   };
 
   return (
@@ -134,63 +296,10 @@ export default function Home() {
         fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
       }}
     >
-      {/* Tab bar — hidden on very small screens to save space */}
-      <Box
-        sx={{
-          height: C.tabBarHeight || 34,
-          bgcolor: C.tabBg,
-          display: { xs: "none", sm: "flex" },
-          alignItems: "center",
-          px: 1,
-          gap: 0.5,
-          borderBottom: "1px solid #c5cddb",
-          flexShrink: 0,
-        }}
-      >
-        <Box sx={{ display: "flex", gap: 0.5 }}>
-          {["IPS-USA", "IPS-UNI"].map((t, i) => (
-            <Box
-              key={t}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                px: 1.4,
-                py: 0.45,
-                bgcolor: i === 0 ? "#fff" : "#f1f2f4",
-                borderRadius: "8px 8px 0 0",
-                border: "1px solid #c5cddb",
-                borderBottom: i === 0 ? "1px solid #fff" : undefined,
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#333",
-              }}
-            >
-              {i === 0 && (
-                <Box
-                  sx={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    bgcolor: "#2e7d32",
-                  }}
-                />
-              )}{" "}
-              {t}{" "}
-              {i === 0 && (
-                <ExpandMoreIcon sx={{ fontSize: 14, color: "#666" }} />
-              )}
-            </Box>
-          ))}
-          <IconButton size="small" sx={{ width: 22, height: 22 }}>
-            <AddIcon sx={{ fontSize: 15 }} />
-          </IconButton>
-        </Box>
-        <Box sx={{ flex: 1 }} />
-        <Box sx={{ display: "flex", gap: 1, color: "#6b7280", fontSize: 14 }}>
-          ─ &nbsp; □ &nbsp; ✕
-        </Box>
-      </Box>
+      {/* Simple window tab strip like desktop screenshot */}
+      <WindowTabBar
+        activeTitle={isDM ? dmUser?.display : mm.activeChannel?.name || "Mahnoor…"}
+      />
 
       <AppHeader
         globalSearch={mm.globalSearch}
@@ -207,10 +316,12 @@ export default function Home() {
         }}
         onOpenSettings={() => mm.setShowSettings(true)}
         onLogout={() => navigate("/login")}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed((v) => !v)}
+        profilePhotoUrl={profileData.photoUrl}
       />
 
       <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        <ServerSidebar />
         {/* Sidebar: drawer on mobile, permanent on desktop */}
         {isMobile ? (
           <>
@@ -246,6 +357,7 @@ export default function Home() {
                 onCreateChannel={() => mm.setShowCreateChannel(true)}
                 onAddDM={() => mm.setShowAddDM(true)}
                 users={USERS}
+                currentUser={{ display: profileData.fullName, color: "#7c3aed", photoUrl: profileData.photoUrl }}
                 onOpenThreads={() => {
                   mm.setRightTab("thread");
                   mm.setRightOpen(true);
@@ -255,15 +367,19 @@ export default function Home() {
             </Drawer>
           </>
         ) : (
-          <ChannelSidebar
-            channels={mm.channels}
-            filteredChannels={mm.filteredChannels}
-            selectedChannel={mm.selectedChannel}
-            selectedDM={mm.selectedDM}
-            searchQuery={mm.searchQuery}
-            setSearchQuery={mm.setSearchQuery}
-            favoritesOnly={false}
-            setFavoritesOnly={() => {}}
+          <>
+            <ChannelSidebar
+              channels={mm.channels}
+              filteredChannels={mm.filteredChannels}
+              selectedChannel={mm.selectedChannel}
+              selectedDM={mm.selectedDM}
+              searchQuery={mm.searchQuery}
+              setSearchQuery={mm.setSearchQuery}
+              favoritesOnly={false}
+              setFavoritesOnly={() => {}}
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+              width={sidebarWidth}
             onSelectChannel={(id) => {
               mm.setSelectedChannel(id);
               mm.setSelectedDM(null);
@@ -278,15 +394,28 @@ export default function Home() {
             onCreateChannel={() => mm.setShowCreateChannel(true)}
             onAddDM={() => mm.setShowAddDM(true)}
             users={USERS}
+            currentUser={{ display: profileData.fullName, color: "#7c3aed", photoUrl: profileData.photoUrl }}
             onOpenThreads={() => {
               mm.setRightTab("thread");
               mm.setRightOpen(true);
             }}
           />
+            {!sidebarCollapsed && (
+              <SidebarResizeHandle
+                onMouseDown={handleResizeMouseDown}
+                onDoubleClick={() => setSidebarCollapsed(true)}
+                isResizing={isResizing}
+              />
+            )}
+          </>
         )}
 
         {/* Main column */}
         <Box
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
           sx={{
             flex: 1,
             display: "flex",
@@ -294,8 +423,21 @@ export default function Home() {
             overflow: "hidden",
             minWidth: 0,
             bgcolor: C.mainBg,
+            position: "relative",
           }}
         >
+          {/* Drop overlay */}
+          {isDragging && (
+            <Box sx={{ position: "absolute", inset: 10, zIndex: 30, borderRadius: 2, border: "2px dashed #3d7de8", bgcolor: "rgba(15,25,45,0.88)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, pointerEvents: "none", p: 2, textAlign: "center" }}>
+              <Box sx={{ width: 56, height: 56, borderRadius: "50%", bgcolor: "rgba(61,125,232,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <DropIcon sx={{ fontSize: 30, color: "#5aa9ff" }} />
+              </Box>
+              <Typography sx={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Drop files to share</Typography>
+              <Typography sx={{ fontSize: 12.5, color: "#9aa4b2" }}>
+                in {isDM ? dmUser?.display : `#${mm.activeChannel?.name || "channel"}`} · images preview inline, other files attach as cards
+              </Typography>
+            </Box>
+          )}
           <Box
             sx={{
               display: "flex",
@@ -436,7 +578,7 @@ export default function Home() {
             selectedDM={mm.selectedDM}
             activeMessages={mm.activeMessages}
             dmUser={dmUser}
-            getUser={mm.getUser}
+            getUser={getUserEx}
             listRef={mm.listRef}
             editingId={mm.editingId}
             editText={mm.editText}
@@ -457,17 +599,21 @@ export default function Home() {
           <MessageInput
             value={mm.input}
             onChange={handleInputChange}
-            onSend={mm.sendMessage}
+            onSend={handleSend}
             onKeyDown={handleSendKey}
+            onPaste={handlePaste}
             inputRef={mm.inputRef}
             fileRef={mm.fileRef}
             placeholder={`Write to ${isDM ? dmUser?.display : mm.activeChannel?.name || "channel"}`}
             mentionOpen={mentionOpen}
-            users={USERS}
+            users={usersWithPhoto}
             onMentionSelect={insertMention}
             showEmojiPicker={showEmojiPicker}
             setShowEmojiPicker={handleSetShowEmojiPicker}
-            onAttach={() => {}}
+            onAttach={handleAttachInput}
+            attachments={pendingFiles}
+            onRemoveAttachment={removeAttachment}
+            canSend={pendingFiles.length > 0}
           />
         </Box>
 
@@ -477,11 +623,17 @@ export default function Home() {
           setTab={mm.setRightTab}
           onClose={() => mm.setRightOpen(false)}
           threadMsg={threadMsg}
-          getUser={mm.getUser}
+          getUser={getUserEx}
           activeMessages={mm.activeMessages}
           rightSearch={mm.rightSearch}
           setRightSearch={mm.setRightSearch}
           isMobile={isMobile}
+          mePhotoUrl={profileData.photoUrl}
+          threadName={isDM ? dmUser?.display : mm.activeChannel?.name || ""}
+          threadReplies={mm.threadFor ? (mm.threadReplies[mm.threadFor] || []) : []}
+          onAddReply={(text, attachments) => mm.addThreadReply(mm.threadFor, text, attachments)}
+          onToggleFollow={() => mm.toggleFollow(mm.threadFor)}
+          onBack={() => mm.setThreadFor(null)}
         />
       </Box>
 
@@ -672,6 +824,16 @@ export default function Home() {
         setProfileTab={mm.setProfileTab}
         profileData={profileData}
         setProfileData={setProfileData}
+      />
+      <QuickSwitcher
+        open={mm.switcherOpen}
+        onClose={() => mm.setSwitcherOpen(false)}
+        channels={mm.channels}
+        users={usersWithPhoto}
+        selectedChannel={mm.selectedChannel}
+        selectedDM={mm.selectedDM}
+        onSelectChannel={handleSwitcherChannel}
+        onSelectDM={handleSwitcherDM}
       />
       <SettingsDialog
         open={mm.showSettings}
