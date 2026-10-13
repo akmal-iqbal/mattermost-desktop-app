@@ -293,7 +293,6 @@ export default function Home() {
         height: "100dvh",
         bgcolor: C.mainBg,
         overflow: "hidden",
-        fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
       }}
     >
       {/* Simple window tab strip like desktop screenshot */}
